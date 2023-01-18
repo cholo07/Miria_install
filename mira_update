@@ -1,0 +1,59 @@
+---
+- name: Install software
+  hosts: all
+  gather_facts: no
+  vars:
+    installer_input: |
+      1
+      y
+
+  tasks:
+    - name: Download the software
+      command: |
+        wget http://path/installMiria.bin -O /root/installMiria.bin
+      register: download_output
+      tags:
+        - download
+
+    - name: Debug the download output
+      debug:
+        var: download_output
+      tags:
+        - debug
+
+    - name: Check if the download is successful
+      shell: test -f /root/installMiria.bin
+      register: download_check
+      failed_when: download_check.rc != 0
+      changed_when: download_check.rc == 0
+      tags:
+        - check
+
+    - name: Debug the download check output
+      debug:
+        var: download_check
+      tags:
+        - debug
+
+    - name: Make the binary file executable
+      file:
+        path: /root/installMiria.bin
+        mode: '0777'
+      tags:
+        - executable
+
+    - name: Automate the installation process
+      shell: /root/installMiria.bin  -i silent
+      become: true
+      args:
+        chdir: /root
+        creates: /root/installMiria.bin.done
+      tags:
+        - install
+
+    - name: Remove the software
+      file:
+        path: /root/installMiria.bin
+        state: absent
+      tags:
+        - remove
